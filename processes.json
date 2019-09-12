@@ -1,0 +1,17 @@
+{
+  "apps": [{
+    "name"        : "sinly",
+    "script"      : "index.js",
+    "watch"       : ["lib/server/**", "index.js", "webpack.config.js"],
+    "max_memory_restart": "400M",
+    "max_restarts": 3,
+    "args":"--color"
+  }, {
+    "name"        : "sinly-compiler",
+    "script"      : "devCompiler/index.js",
+    "watch"       : ["devCompiler/**", "webpack.config.js"],
+    "max_memory_restart": "400M",
+    "max_restarts": 3,
+    "args":"--color"
+  }]
+}

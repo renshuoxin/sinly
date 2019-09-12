@@ -1,0 +1,40 @@
+{
+  "name": "sinly",
+  "version": "1.0.0",
+  "description": "web app for sinly demo",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "build": "webpack",
+    "dev": "pm2 start processes.json && pm2 logs",
+    "test": "npm run test"
+  },
+  "dependencies": {
+    "axios": "^0.19.0",
+    "jade": "^1.11.0",
+    "koa": "^2.8.1",
+    "koa-body": "^4.1.1",
+    "koa-router": "^7.4.0",
+    "koa-views": "^6.2.0",
+    "vue": "2.6.10"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "babel-loader": "^8.0.6",
+    "clean-webpack-plugin": "^3.0.0",
+    "css-loader": "^3.2.0",
+    "file-loader": "^4.2.0",
+    "less": "^3.10.3",
+    "less-loader": "^5.0.0",
+    "style-loader": "^1.0.0",
+    "url-loader": "^2.1.0",
+    "vue-loader": "^15.7.1",
+    "vue-template-compiler": "2.6.10",
+    "webpack": "^4.39.3",
+    "webpack-dev-server": "^3.8.0"
+  },
+  "author": "renshuoxin",
+  "license": "ISC"
+}
