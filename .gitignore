@@ -1,2 +1,4 @@
 /node_modules/*
 /lib/client/dist/*
+.DS_Store
+/lib/.DS_Store
