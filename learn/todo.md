@@ -134,7 +134,6 @@ export function initUse(Vue: GlobalAPI) {
 - 网络进程。主要负责页面的网络资源加载，之前是作为一个模块运行在浏览器进程里面的，直至最近才独立出来，成为一个单独的进程。
 ## 垃圾回收
 https://mp.weixin.qq.com/s?__biz=MzAxODE2MjM1MA==&mid=2651562406&idx=2&sn=4d4febaa377db6cd02cbb660fd88402b&chksm=80257667b752ff71c7683e88853ce4da54d5b226f675a238306e242a3dcb09dd9e7a84fe9330&scene=21#wechat_redirect
-## git reset && git revert
 
 # 业务
 ## 一点号强制用户刷新页面（上线增加版本号概念）
