@@ -135,5 +135,7 @@ export function initUse(Vue: GlobalAPI) {
 ## 垃圾回收
 https://mp.weixin.qq.com/s?__biz=MzAxODE2MjM1MA==&mid=2651562406&idx=2&sn=4d4febaa377db6cd02cbb660fd88402b&chksm=80257667b752ff71c7683e88853ce4da54d5b226f675a238306e242a3dcb09dd9e7a84fe9330&scene=21#wechat_redirect
 
+## git reset && git revert
+
 # 业务
 ## 一点号强制用户刷新页面（上线增加版本号概念）
