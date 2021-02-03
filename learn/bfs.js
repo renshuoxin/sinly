@@ -34,3 +34,16 @@ let obj = {
   z: 4
 }
 bfs(obj)
+
+function bfsTraversal(root) {
+  let nodeList = [], nodes = [];
+  nodeList.push(root);
+  while(nodeList.length) {
+    let node = nodeList.shift();
+    nodes.push(node);
+    for(let i = 0; i < node.children.length; i++) {
+      nodeList.push(node.children);
+    }
+  }
+  return nodes;
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>vue双向绑定</title>
+    <script type="text/javascript" src="../test.js"></script>
+    <style>
+      .father {
+        width: 100px;
+        height: 80px;
+      }
+      .child {
+        width: 100%;
+        padding-top: 40%;
+        background: red;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="name"></div>
+    <div id="age"></div>
+    <div class="father" id="father">
+      <div class="child" id="child"></div>
+    </div>
+    <script type="text/javascript" src="../vue.js"></script>
+    <script>
+      let nameEle = document.getElementById('name');
+      let data = {
+        name:  123
+      }
+      let father = document.getElementById('father')
+      let child = document.getElementById('child');
+      father.addEventListener('click', () => {
+        console.log('father');
+      }, false)
+      child.addEventListener('click', () => {
+        console.log('child');
+      }, false)
+      // function selfVue(data, el, exp) {
+      //   this.data = data;
+      //   observe(data);
+      //   el.innerHTML = this.data[exp];  // 初始化模板数据的值
+      //   new watcher(this, exp, function(val, oldVal) {
+      //     console.log(val, oldVal);
+      //     el.innerHTML = val;
+      //   })
+      //   return this;
+      // }
+      // let ins = new selfVue(data, nameEle, 'name');
+      // setTimeout(() => {
+      //   ins.data.name = "值改变了";
+      // }, 2000);
+    </script>
+  </body>
+</html>
