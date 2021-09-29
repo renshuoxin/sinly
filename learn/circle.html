@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>圆环进度条</title>
+  <meta charset="utf-8" name="viewport" content="width=device-width;initial-scale=1.0" />
+  <style type="text/css">
+    * {
+      margin: 0px;
+      padding: 0px;
+    }
+
+    .loop-pie {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 60px;
+    }
+
+    .loop-pie-line {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      top: 0;
+      overflow: hidden;
+    }
+
+    .loop-pie-l {
+      top: 0px;
+      left: 0px;
+    }
+
+    .loop-pie-r {
+      top: 0px;
+      transform: rotate(180deg);
+      right: 0px
+    }
+
+    .loop-pie-c {
+      width: 200%;
+      height: 100%;
+      border: 4px solid transparent;
+      border-radius: 50%;
+      position: absolute;
+      box-sizing: border-box;
+      top: 0;
+      transform: rotate(-45deg);
+    }
+
+    .loop-pie-rm {
+      border-top: 4px solid #baedee;
+      border-left: 4px solid #baedee;
+      border-bottom: 4px solid #1ac4c7;
+      border-right: 4px solid #1ac4c7;
+    }
+
+    .loop-pie-lm {
+      border-top: 4px solid #baedee;
+      border-left: 4px solid #baedee;
+      border-bottom: 4px solid #1ac4c7;
+      border-right: 4px solid #1ac4c7;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="loop-pie">
+    <div class="loop-pie-line loop-pie-r">
+      <div class="loop-pie-c loop-pie-rm" id="loop-rc"></div>
+    </div>
+    <div class="loop-pie-line loop-pie-l">
+      <div class="loop-pie-c loop-pie-lm" id="loop-lc"></div>
+    </div>
+
+  </div>
+  <script>
+    //假如当前进度为40%
+loadPercent(40, 100);
+
+function loadPercent(x, y) {
+    var rotate = (x / y) * 360
+    var rotateRight = 0
+    var rotateLeft = 0
+    if (rotate < 180) {
+        rotateRight = rotate + (-45)
+
+    } else {
+        rotateRight = 135
+        rotateLeft = (rotate - 180 - 45)
+        document.getElementById('loop-lc').style =  "-webkit-transform: rotate(" + rotateLeft + "deg)";
+    }
+    document.getElementById('loop-rc').style = "-webkit-transform : rotate(" + rotateRight + "deg)";
+}
+  </script>
+</body>
+
+</html>
