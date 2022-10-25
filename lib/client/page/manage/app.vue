@@ -13,6 +13,8 @@
             router-link.nav-item-link(to="/you") you
           li.nav-item
             router-link.nav-item-link(to="/me") me
+          li.nav-item
+            router-link.nav-item-link(to="/quillEditor") editor
     .content
       router-view
 </template>

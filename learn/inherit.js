@@ -63,33 +63,33 @@ function myNew() {
   result.__proto__ = f.prototype;
   return result;
 }
-function Person() {
-  this.name = "renshuoxin";
-  return {};
-}
+// function Person() {
+//   this.name = "renshuoxin";
+//   return {};
+// }
 
-Person.prototype.getName = function() {
-  return this.name;
-}
+// Person.prototype.getName = function() {
+//   return this.name;
+// }
 
-function Student() {
-  Person.call(this);
-  this.age =  14;
-}
+// function Student() {
+//   Person.call(this);
+//   this.age =  14;
+// }
 
-Student.prototype = new Person();
+// Student.prototype = new Person();
 
-var foo = {},
-F = function(){};
-Object.prototype.a = 'value a';
-Function.prototype.b = 'value b';
-// foo.__proto__ == Object.prototype
-console.log(foo.a)   // value a
-console.log(foo.b)   // undefined
-// F.__proto__ == Function.prototype
-// Function.prototype.__proto__ == Object.prototype
-console.log(F.a)   // value a   
-console.log(F.b)   // value b
+// var foo = {},
+// F = function(){};
+// Object.prototype.a = 'value a';
+// Function.prototype.b = 'value b';
+// // foo.__proto__ == Object.prototype
+// console.log(foo.a)   // value a
+// console.log(foo.b)   // undefined
+// // F.__proto__ == Function.prototype
+// // Function.prototype.__proto__ == Object.prototype
+// console.log(F.a)   // value a   
+// console.log(F.b)   // value b
 
 
 
