@@ -75,10 +75,11 @@ function dfsTraversal3(root) {
   if(root) {
     stack.push(root);
     while(stack.length) {
-      let node = stack.shift();
+      let node = stack.pop();
+      let children = node.children || [];
       nodeList.push(node);
-      for(let i = node.children.length -1; i >= 0; i--) {
-        stack.push(node.children[i]);
+      for(let i = children.length -1; i >= 0; i--) {
+        stack.push(children[i]);
       }
     }
   }

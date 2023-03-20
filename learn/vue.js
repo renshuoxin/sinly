@@ -52,6 +52,7 @@ Dep.prototype.notify = function() {
 function watcher(vm, exp, cb) {
   this.vm = vm;
   this.exp = exp;
+  // watcher在初始化时，执行了get()函数
   this.value = this.get();
   this.cb = cb;
 }

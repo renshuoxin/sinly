@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2022开启新篇章</title>
+</head>
+<body>
+  <div class="mod-app" id="app">
+    <input type="text" id="input" />
+  </div>
+
+  <script>
+    const debounce = (fn, seconds, immediate = false) => {
+      let timer = null;
+      return (...args) => {
+        if(timer) clearTimeout(timer);
+        let context = this;
+        if (immediate) {
+          fn.apply(context, args);
+        } else {
+          timer = setTimeout(() => {
+            fn.apply(context, args);
+          }, seconds)
+        }
+      }
+    };
+    
+    const ele = document.getElementById('input');
+
+    const fun = () => {
+      console.log('text:', ele.textContent);
+    };
+
+    ele.addEventListener('input', debounce(fun, 200, true));
+  </script>
+</body>
+</html>
