@@ -20,6 +20,7 @@
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^7.4.0",
     "koa-views": "^6.2.0",
+    "masonry-layout": "^4.2.2",
     "quill": "^1.3.7",
     "vue": "2.6.10",
     "vue-html5-editor": "^1.1.1",

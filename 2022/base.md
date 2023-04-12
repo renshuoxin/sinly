@@ -206,6 +206,22 @@ function makeIterator2(arr) {
 ```
 ```
 # vue
+## MVVM
+- M(model)：数据层，关注数据本身  
+  对应vue中的data、props属性  
+- V(view)：视图层  
+  对应vue中的template和style部分  
+- VM(view-model)：业务逻辑层，实现双向绑定，保证view和model不会直接联系
+  对应Vue的组件实例
+### MVVM数据绑定实现要素
+- 发布-订阅模式
+- 数据劫持
+### MVVM双向绑定实现要点
+- 实现Observer，对数据对象所有属性进行劫持监听；
+- 实现指令解析器compiler，对Vue每个元素节点的指令进行解析和执行，将指令模板的变量都替换成数据，然后渲染初始页面；并将每个指令对应的节点绑定更新函数，添加数据订阅者；一旦数据发生变化，收到通知更新视图；
+- 实现订阅者watcher，watcher是observer和compiler的桥梁。主要任务：
+  - 在自身实例化时在属性订阅器中添加自己
+  - 数据发生变化收到通知时，调用自身update，并触发compiler中绑定的回调更新视图
 ## 生命周期
 ![avatar](https://p3-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/3eadd1ec0ac94343951ae2453cf41fce~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp)  
 ### vue3
@@ -222,7 +238,7 @@ function makeIterator2(arr) {
 - beforeUpdate: 响应式状态变更导致DOM需要更新之前调用
 - updated: 响应式状态变更导致DOM更新完成之后调用
 - beforeDestroy: 组件实例卸载之前调用
-- destroyed: 组件实例卸载之后调用，此时所有子组件都已被卸载
+- destroyed: 组件实例卸载之后调用，此时所有子组件都已被卸载 
 ## Vue父组件和子组件生命周期执行顺序
 1、父组件创建：beforeCreate => created => beforeMount<br>
 2、子组件创建：=> beforeCreate => created => beforeMount => mounted<br>
@@ -322,6 +338,11 @@ export default {
   - setup：在beforeCreate之前执行
   - beforeDestroy -> beforeUnmount、destroyed -> unmount
 - 响应式数据声明：ref、reactive、toRefs(vue2定义在data属性中)
+  - reactive: 本质是将普通对象封装为proxy；参数只能是对象或数组；
+  - ref: 可将基本数据类型封装为响应式；如果是对象，底层本质还是reactive
+```
+ref(1) => reactive({value: 1});
+```
 - 数据侦听：watchEffect
   - 不需要手动传入依赖
   - 在实例初始化时会先执行一次收集依赖
@@ -433,6 +454,107 @@ notify(event, value) {
 5. $parent/$children 与 ref(父子通信)  
 - ref：如果在普通元素上使用，引用指向DOM元素；如果在组件上使用，引用指向组件实例
 - $parent/$children: 访问父/子实例
+## 插槽
+用于组件接受模板内容，`<slot>`元素是一个**插槽出口**，标示了父元素提供的**插槽内容**将在哪里渲染  
+### 作用域
+插槽内容可以访问父元素的数据作用域，不可以访问子组件的数据。
+### 插槽分类  
+**1、默认插槽**  
+```
+// 子组件 submitButton
+<button class="submit-btn"><slot></slot></button>
+
+// 父组件
+<submitButton>submit</submitButton>
+
+// 解析后
+<button class="submit-btn">submit</button>
+```
+**2、具体插槽**  
+```
+// 子组件 baseLayout
+<div class="container">
+  <header>
+    <slot name="header"></slot>
+  </header>
+  <main>
+    <slot></slot>
+  </main>
+  <footer>
+    <slot name="footer"></slot>
+  </footer>
+</div>
+
+// 父组件
+<base-layout>
+  <template v-slot="header">title</template>
+  <div>main-content</div>
+  <template v-slot="footer">footer</template>
+</base-layout>
+```
+**3、动态插槽名**  
+动态指令参数在v-slot也可以生效  
+```
+<base-layout>
+  <template v-slot:[dynamicSlotName]>
+    ...
+  </template>
+
+  <!-- 缩写为 -->
+  <template #[dynamicSlotName]>
+    ...
+  </template>
+</base-layout>
+```
+**4、作用域插槽**  
+默认情况下，插槽内容无法访问子组件数据，因此作用域插槽提供了一种方式，可以让插槽内容访问子组件数据  
+```
+# 子组件
+<div>
+  <slot :text="greetingMessage" :count="1"></slot>
+</div>
+
+# 父组件
+<MyComponent v-slot="slotProps">
+  {{ slotProps.text }} {{ slotProps.count }}
+</MyComponent>
+```
+## vue-router
+为vue应用提供路由管理器，描述URL和UI的映射关系，即URL变化引起UI更新（无需刷新页面）
+### 核心点
+1. 如何实现改变URL而不引起页面刷新
+2. 如何监听URL变化
+### hash模式
+1. url中hash以#开头，**hash改变时，页面不会刷新同时也不会向服务器发送请求**  
+2. 通过`hashChange`事件来监听URL变化
+### history模式
+1. HTML5中提供了`pushState` 和 `replaceState`方法，**这两个方法改变URL不会引起页面刷新**
+2. 通过`popState`事件来监听URL变化
+   - 通过浏览器前进后退改变URL会触发popState
+   - 通过pushState/replaceState 或者 a标签跳转不会触发popState;需要通过拦截pushState/replaceState和a标签的点击事件来监听URL的变化
+   - 通过js调用history的back、go、forward触发popState
+3、需要后端配合，提供404页面
+### 完整的导航守卫流程
+- `beforeRouterLeave`: 失活的组件中调用离开守卫
+- `beforeEach`: 全局守卫
+- `beforeRouterUpdate`: 在重用组件中吊样
+- `beforeEnter`: 在路由配置里调用路由独享守卫
+- 解析路由组件
+- `beforeRouterEnter`: 在被激活的组价中调用
+- `beforeResolve`: 在所有组件内守卫和异步路由组件被解析后调用全局守卫
+- 导航被确认
+- `afterEach`: 调用全局守卫
+- 触发DOM更新
+### 全局守卫
+- beforeEach: 全局前置守卫
+- afterEach: 全局后置守卫
+- beforeResolve: 全局解析守卫
+### route 和 router
+- route: 路由信息对象，包括path、params、hash、query、name等
+- router: 路由实例对象，包括路由跳转方法、钩子函数等
+### 路由如何跳转
+- 通过内置组件`<router-link to="/home"></router-link>`
+- 编程式方式：`router.push` 和 `router.replace`
 # js基础
 ## 数据类型
 - 基本数据类型包括：String、Number、Boolean、undefined、null、Symbol(es6，表示独一无二的值)
@@ -519,6 +641,125 @@ Object.prototype.toString.call(new Error()) ; // [object Error]
 Object.prototype.toString.call(document) ; // [object HTMLDocument]
 Object.prototype.toString.call(window) ; //[object global] window是全局对象global的引用
 ```
+## var && let && const
+1. var定义的变量，`没有块的概念，可以跨块访问`，不能跨函数访问  
+   let定义的变量，只能在块作用域进行访问，不能跨块访问，也不能跨函数访问  
+   const用来定义常量，使用时必须初始化(必须赋值)，只能在块作用域访问，且不能修改
+2. var可以`先使用，再声明`，因为存在变量提升；let必须声明后再使用
+3. var允许在相同作用域中声明同一变量，而let和const不允许
+4. 在全局上下文中，基于let声明的变量和全局对象没有任何关系；var声明的变量和全局对象有关系
+5. let和const会产生暂时性死区：在变量声明之前，该变量都是不可用的
+## JS垃圾回收机制
+### 垃圾回收机制
+不再使用的变量，浏览器垃圾回收器会对其进行回收，释放内存。  
+**1、如何回收垃圾**  
+- 对垃圾进行标记，标记[不可达]变量
+- 回收不可达值占用的内存空间
+- 内存整理：频繁回收垃圾之后会产生内存碎片(不连续空间)；如果不进行内存整理，当需要较大连续内存时，就会出现内存不足。因此需要将空闲内容整理成连续空间  
+**2、何时进行垃圾回收**  
+- 浏览器进行垃圾回收的时候，会暂停 JavaScript 脚本，等垃圾回收完毕再继续执行  
+- 分代收集、增量收集、闲时收集
+### 垃圾回收算法
+- 标记清除：变量在进入执行环境时，被标记为“进入环境”，当变量离开执行环境时，被标记为“离开环境”。垃圾回收机制会销毁那些带标记的值并回收它们所占的内存空间
+- 查找引用(谷歌浏览器)：浏览器会不定时去查找当前内存的引用，如果没有被占用了，浏览器就会回收它
+- 引用计数法：当前内存被占用1次，计数累加1，移除占用就减1，减到0时，浏览器就回收
+### 内存泄漏
+- 意外的全局变量
+- 定时器
+- 闭包
+- DOM引用
+- 事件绑定
+## js中this应用场景
+- 普通函数中this：指向window
+- 当函数作为对象的方法访问：this指向当前对象
+- 箭头函数中this: 指向箭头函数定义时所在的对象，若有嵌套，则this绑定在最近一层对象上
+- apply、call、bind可改变this指向
+  - apply接收的参数是数组
+  - call接收的参数是参数列表
+  - bind返回一个绑定特定对象的新函数
+## 事件循环
+js是单线程的，为了防止一个函数执行时间过长阻塞后续的代码，所以先将同步代码压入执行栈中，依次执行，将异步代码推入异步队列；而异步队列分为宏任务队列和微任务队列，微任务队列主要包括`promise.then`、`mutationObserver`，宏任务队列主要包括`setTimeout`、`setInterval`、`setImmediate`  
+### 浏览器中事件循环
+事件循环运行机制，先执行栈中的代码，栈中代码执行完之后执行微任务，微任务清空后再执行宏任务；先取出一个宏任务执行，再执行微任务，然后再取宏任务清空微任务如此循环。主要步骤如下：  
+1. 函数入栈，当Stack中遇到异步任务时便将其交给WebAPIs，然后接着执行同步任务，直到清空栈
+2. 在此期间WebAPIs，将异步任务的回调函数放入异步队列等待执行
+3. 执行栈为空时，开始执行微任务队列直至清空
+4. 微任务队列清空后，进入宏任务队列，取队列中第一项任务放入栈中执行；执行完成后，查看微任务队列是否有任务，有的话清空微任务队列。重复步骤4，直至清空所有任务
+### 浏览器中异步任务源  
+**宏任务**  
+ajax、setTimeout、setInterval、setImmediate、requestAnimationFrame、messageChannel、UI渲染  
+**微任务**  
+promise.then、mutationObserver、queueMicrotask
+### setTimeout、promise、async/await
+- setTimeout: setTimeout任务放在宏任务队列中，等到执行栈清空后执行
+- Promise  
+Promise本身是`同步的立即函数`，当执行器执行resolve或者reject时，才是异步操作，将异步回调放入到微任务队列  
+```
+console.log('script start')
+let promise1 = new Promise(function (resolve) {
+    console.log('promise1')
+    resolve()
+    console.log('promise1 end')
+}).then(function () {
+    console.log('promise2')
+})
+setTimeout(function(){
+    console.log('settimeout')
+})
+console.log('script end')
+// 输出顺序：script start -> promise1 -> promise1 end -> script end -> promise2 -> settimeout
+```
+- async/await  
+async函数返回一个Promise对象，当函数执行时，遇到await就会先返回，等到触发的异步操作完成，再执行后面的语句  
+```
+async function async1(){
+   console.log('async1 start');
+    await async2();
+    console.log('async1 end')
+}
+async function async2(){
+    console.log('async2')
+}
+
+console.log('script start');
+async1();
+console.log('script end')
+// 输出顺序：script start -> async1 start -> async2 -> script end -> async1 end
+```
+## 尾调用
+在某个函数的最后一步操作是调用另一个函数
+### 尾调用优化
+因为在最后一步执行时，外层函数的变量、调用位置不会再用到，因此可以只保留内层函数的调用记录。如果所有函数都是尾调用，可以做到每次执行时调用记录只有一项，大大节省内存
+### 尾递归
+在函数最后一步调用自身。  
+  
+**实现阶乘函数 n!**
+```
+function factorial(n) {
+  if (n === 1) return 1;
+  return n * factorial(n - 1);
+}
+```
+ - 问题：栈溢出
+ - 解决方法：1）尾递归优化；2、非递归方式
+1. 尾递归优化
+将函数内部变量改写成函数参数。  
+```
+function factorial(n, total = 1) {
+  if (n === 1) return total;
+  return factorial(n - 1, n * total);
+}
+```
+2. 非递归方式
+```
+function factorial(n) {
+  let result = 1;
+  for (let i = 1; i <= n; i++) {
+    result *= i;
+  }
+  return result;
+}
+```
 # 其他
 ## jsBridge
 ### JS调用Native实现方式
@@ -526,7 +767,7 @@ Object.prototype.toString.call(window) ; //[object global] window是全局对象
 **核心原理**
 - 通过`Webview`提供的接口，向JavaScript上下文注入对象或者方法
 - 允许JavaScript进行调用时，直接执行对应的Native逻辑
-2. URL Scheme劫持  
+1. URL Scheme劫持  
 `URL Scheme`是一种特殊的`URL`，一般用于Web端唤醒APP。  
 `URL Scheme`形式和普通`URL`类似，不过`protocol`和`host`一般是APP自定义的  
 **劫持原理**  
@@ -576,7 +817,7 @@ Web端通过某种方式发送`URL Scheme`请求，`Native`拦截到请求后根
   使用`abosulte`或`fixed`让元素脱离文档流，回流开销小，对其他元素影响较小
 - 避免频繁读取引起回流/重绘的属性，如果需要多次读取，使用本地变量缓存
 **浏览器优化机制**
-由于每次回流会造成额外的计算消耗，因此目前大多数浏览器会通过队列批量执行回流过程。浏览器会将修改操作放入队列，直到多了一段时间或者达到一定阈值才会进行处理。但是，**当开发者获取布局信息时，会强制队列刷新**，如
+由于每次回流会造成额外的计算消耗，因此目前大多数浏览器会通过队列批量执行回流过程。浏览器会将修改操作放入队列，直到一段时间或者达到一定阈值才会进行处理。但是，**当开发者获取布局信息时，会强制队列刷新**，如
   - offset系列
   - scrollTop、scrollLeft、scrollHeight、scrollWidth
   - client系列
@@ -675,7 +916,7 @@ http响应报文包括响应行、响应头、响应主体
 ### TCP四次挥手
 - 客户端发送请求，要求释放连接（FIN），并发送数据包seq: 此时客户端停止向服务端发送数据，但是依然可以接收服务端返回的数据(客户端不再发送请求报文)
 - 服务端收到请求后，确认客户端想要释放连接（ACK = 1）,发送请求报文表示同意关闭(此时服务器已经接受完请求报文)
-- 服务端自从发送ACK确认报文后，做好了释放连接的准备，再次向客户端发送报文（FIN,ACK）：告诉客户端已经做好释放连接的准备了(此时服务端已经发成响应报文发送)
+- 服务端自从发送ACK确认报文后，做好了释放连接的准备，再次向客户端发送报文（FIN,ACK）：告诉客户端已经做好释放连接的准备了(此时服务端已经完成响应报文发送)
 - 客户端收到请求后，确认服务端已经做好准备，并向服务端发送请求；服务端收到后，正式确认关闭服务端到客户端的连接(客户端已经接收完响应报文，准备关闭)
 ## 浏览器缓存
 ### 按缓存位置分类
@@ -730,7 +971,290 @@ Expires是HTTP 1.0的字段，表示缓存到期时间，是一个绝对时间�
 在HTTP/1.1中增加了Cache-Control字段，表示资源的缓存时间。  
 `Cache-Control`常用的属性值：
 - `max-age`: 最大有效时间
-- `no-cache`: 要求客户端对资源进行缓存，但是否使用由协商缓存绝慈宁宫
+- `no-cache`: 要求客户端对资源进行缓存，但是否使用由协商缓存决定
 - `no-store`: 所有资源都不缓存，包括强制缓存和协商缓存
 - `public`: 所有内容都可以被缓存(包括客户端、代理服务器如CDN)
 - `private`: 所有内容只有客户端能缓存，代理服务器不能缓存
+## cookie、sessionStorage和localStorage
+- cookie数据大小不能超过4K；sessionStorage和localStorage可以达到5M+;
+- cookie在设置的过期时间内一直有效；localStorage永久存储，浏览器关闭后仍然有效除非用户手动清除；sessionStorage在当前会话中有效，浏览器当前窗口关闭后自动删除
+- cookie的数据会自动传到服务器；sessionStorage和localStorage数据存储在本地浏览器
+# 网络
+https://www.eet-china.com/mp/a68780.html  
+## HTTP和HTTPS
+### http和https基本概念
+1、**http**: http是客户端和服务器端请求和应答的标准，用于从WWW服务器传输超文本到本地浏览器的超文本传输协议；
+2、**https**: 以安全为目标的HTTP通道，即在HTTP下加入SSL层进行加密。其作用是：建立信息安全通道来确保数据的传输，同时确保网站的真实性。
+### http和https的区别
+- http是超文本传输协议，明文传输数据；https是具有安全性的ssl加密传输协议，可防止数据被窃取或篡改，比http协议更安全
+- http协议默认端口是80；https默认端口是443
+- http连接简单，是无状态的；https要经过三次握手，使得页面加载时间延长
+- https协议需要ca证书，费用较高
+- ssl证书需要绑定IP，不能在同一个IP上绑定多个域名
+### https工作原理
+https://cloud.tencent.com/developer/article/1601995  
+![avatar](https://ask.qcloudimg.com/http-save/6837186/mloginfful.jpeg?)  
+1、**证书验证阶段**  
+  1. 客户端发起https请求  
+  2. 服务器接收请求并返回证书(证书包含了公钥、证书颁发机构、证书过期时间、域名等信息)  
+  3. 客户端验证证书的合法性，如不合法提示告警
+  
+2、**数据传输阶段**  
+  1. 客户端生成随机数  
+  2. 通过公钥对其进行加密，并将加密后的随机数传输到服务端  
+  3. 服务端利用私钥对随机数进行解密
+  4. 之后客户端和服务端通过此随机数构造对称加密算法，进行数据传输
+### 浏览器如何保证CA证书的合法性
+1、**证书包含信息：**  
+- 颁发机构
+- 公司信息
+- 证书有效期
+- 域名
+- 公钥                              
+- 指纹
+- ......  
+2、**证书的合法性依据**  
+- 证书颁发机构要有认证，不是任何机构都能颁发证书
+- 证书可信性基于信任制，权威机构需要对其颁发的证书进行信用背书，只要是权威机构颁发的证书，都会被认为是合法的  
+3、**浏览器如何验证**  
+浏览器发起请求时，服务器端会返回对应的SSL证书，浏览器主要做以下验证：  
+- 对证书的域名、有效期等信息进行验证
+- 判断证书来源是否合法。每份证书都可以根据验证链找到其根证书，操作系统、浏览器会在本地存储权威机构的根证书，利用本地根证书对对应机构进行来源验证
+- 判断证书是否被篡改，需要和CA服务器进行校验
+- 判断证书是否已吊销。通过CRL（Certificate Revocation List 证书注销列表）和 OCSP（Online Certificate Status Protocol 在线证书状态协议）实现，其中 OCSP 可用于第3步中以减少与 CA 服务器的交互，提高验证效率
+### TCP如何保证数据包的可靠有序传输
+对字节流分段进行编号然后通过`ACK回复`和`超时重发`两个机制来保证  
+1) 发送方每次发送数据时，TCP给每个数据包分配一个序列号并且在特定时间内等待接收方对这个序列号进行确认。  
+2) 如果发送发在特定时间内没有收到接收方的确认，则发送方会重传数据。  
+3) 接收方利用序列号对数据进行确认，以便检测对方发送的数据是否有丢包或者乱序；接收方一旦收到已经顺序化的数据，就将这些数据按正确的顺序进行重组成数据流传递到上层协议进行处理。  
+  
+**核心算法**  
+- 为了保证数据包的可靠传输，发送方必须将已发送的数据包保存在缓冲区
+- 为每个已发送的数据包启动一个超时定时器（重传定时器）
+- 如在定时器超时之前收到接收方发送的应答信息，则释放该数据包占用的缓冲区；否则重传数据包，直到收到接收方的应答信息或者重传次数超过最大次数限制
+- 接收方收到数据包后，先进行CRC校验，如果正确则把数据交给上层协议，然后给发送方发送一个累计应答包，表明数据已收到。
+### TCP和UDP区别
+- TCP是面向连接的，UDP是面向无连接的
+- TCP仅支持单播传输，UDP支持单播、多播、广播的功能
+- TCP根据三次握手来保证连接的可靠性；UDP是无连接的、不可靠的一种数据传输协议，首先体现在无连接上，通信不需要建立连接；其次对接收的数据也不发送确认信号，发送端不知道数据是否正确接收
+- UDP的头部开销更小，比TCP传输效率更高、实时性更好。
+## http状态码
+- 1XX: 信息性状态码
+- 2XX: 成功状态码
+- 3XX: 重定向状态码
+- 4XX: 客户端错误状态码
+- 5XX: 服务器错误状态码
+### 常见状态码
+- 101：切换请求协议
+- 200：请求成功
+- 301：永久性重定向，会缓存
+- 302：临时重定向，不会缓存
+- 304：请求的资源未修改，此时服务器不会返回任何资源
+- 400：客户端请求的语法错误
+- 403：服务器禁止访问，权限有关
+- 404：服务器根据客户端请求找不到资源
+- 500：服务端错误
+### 301和302
+**1、共同点**  
+- 都是重定向
+- 新的URI地址都是通过response header中Location返回
+- 如果原始请求不是GET或者HEAD请求，浏览器会禁止自动重定向，除非得到用户的确认  
+**2、区别**
+- 301永久重定向；302临时重定向
+- 301会缓存；302不会缓存
+- 301：搜索引擎在抓取新的内容时也会将旧的地址替换为新的地址；302：搜索引擎在抓取新内容时保留旧的地址  
+**3、常见应用场景**  
+- http重定向到https(301)
+- 系统升级，临时替换地址(302)
+- 升级为新域名(301)
+- 登录后重定向到其他指定页面(301)
+## http常见的请求方式、区别和用途
+- get: 获取服务器资源
+- post: 向服务器提交数据
+- put: 向服务器提交数据，以修改数据
+- delete: 删除某些资源
+- options: 获取服务器支持的请求方法，常用于跨域(预检，用以判断实际发送的请求是否安全)
+- head：请求页面的首部，获取资源的元信息
+- connect: 用于ssl隧道的基于代理的请求
+- trace: 追踪请求-响应的传输路径
+## 端口及对应的服务
+- 80: HTTP超文本传输协议
+- 443：https
+- 21: FTP(文件传输协议)
+- 22: ssh
+- 23: Telnet(远程登录)服务
+- 25: SMTP(简单邮件传输协议)
+- 53: DNS域名服务器
+- 110: POP3邮件协议3
+- 1080: Sockets
+- 1521: Oracle数据库默认端口
+- 3306: MySQL数据库默认端口
+## 计算机网络体系结构
+![avatar](http://mianbaoban-assets.oss-cn-shenzhen.aliyuncs.com/xinyu-images/MBXY-CR-7943d7dc8a2afb50c58f3467d45fa768.png)
+### OSI七层模型
+ISO七层模型是国际标准化组织(International Organization for Standardization)指定的用于计算机或者通信系统间的标准体系  
+- 物理层：建立、维护、断开物理连接
+- 数据链路层：在物理层提供比特流服务的基础上，建立相邻节点之间的数据链路
+- 网络层：进行逻辑寻址，实现不同网络之间的路径选择，协议有ICMP、IGMP、IP等
+- 传输层：定义传输数据的协议端口号，以及流控和差错校验，协议有TCP、UDP
+- 会话层：建立、管理、终止会话，对应主机进程，指本地主机和远程主机正在进行的会话
+- 表示层：数据的表示、安全、压缩，确保一个系统的应用层所发送的信息可以被另外一个系统的应用层读取
+- 应用层：网络服务与最终用户的一个接口，常见协议有http、ftp、smtp、dns
+### TCP/IP 四层模型
+- 网络接口层：与OSI中的物理层、数据链路层对应
+- 网际层：与OSI中的网络层相对应，主要解决主机到主机的通信问题
+- 传输层：与OSI中的传输层相对应，为应用层实体提供端到端的通信，保证数据传输的顺序和数据完整性
+- 应用层：与OSI中的会话层、表示层、应用层相对应
+### 五层体系结构
+- 物理层：对应OSI中的物理层
+- 数据链路层：对应OSI中的数据链路层
+- 网络层：对应OSI中的网络层
+- 传输层：对应OSI中的传输层
+- 应用层：对应OSI中的会话层、表示层、应用层
+## 如何理解http协议是无状态的
+当浏览器第一次发送请求时，服务器响应了；如果同个浏览器再次发送请求给服务器时，它还是会响应；但是服务器不知道你就是刚才的浏览器，也就是说服务器不会记住你是谁，所以是无状态的。  
+  
+如果请求时带上cookie，就会变成有状态
+# HTML & css
+## css选择器优先级
+### 选择器
+- 标签选择器
+- id选择器
+- 类选择器
+- 属性选择器
+- 伪类选择器
+- 相邻选择器(h1 + p)
+- 子选择器(ul > li)
+- 后代选择器(ul li)
+- 通配符选择器(*)
+### 选择器优先级
+!important > 行内样式 > id选择器 > 类选择器 > 标签选择器 > 通配符 > 继承 > 浏览器默认属性
+## position属性
+- static: 默认值，正常文档流
+- relative: 相对定位，相对本身的位置进行定位。但无论如何移动，元素仍占据原来的空间
+- absolute: 绝对定位，相对于第一个非static的父级元素定位；脱离文档流，不占据空间
+- fixed: 固定定位，相对于浏览器窗口定位；脱离文档流，不占据空间；即使窗口移动，该元素也不会移动
+- sticky: 粘性定位，元素先按照正常文档流定位，而后相对于它最近的滚动祖先和containing block(最近块级祖先)进行定位，在特定阈值之前为相对定位，之后为固定定位
+## css盒子模型
+- 标准盒子模型：块的总宽度 = width + padding + border + margin
+- 怪异盒模型：块的总宽度 = width + margin
+## box-sizing
+规定如何计算一个元素的总宽度和总高度
+- content-box: 宽度和高度分别应用到元素的内容框，在宽度和高度之外还有padding和border(标准盒模型)
+- border-box: 为元素设定的宽度和高度为元素的边框盒(IE盒子模型)
+- inherit: 继承父元素的box-sizing值
+## 水平垂直居中
+### 水平居中
+**1、行内元素**：`text-align: center`;  
+**2、已知宽度的块级元素**
+- width 和 margin：`margin: 0 auto`;
+- 绝对定位：`position: absolute; left: (父width - 子width) / 2`;
+- margin-left: `margin-left:(父width - 子width) / 2`;
+**3、未知宽度的块级元素**  
+- 绝对定位+transform: `position: absolute;left: 50%;transform: translateX(-50%)`; 
+- flex布局：`justify-content: center`;
+- table布局
+### 垂直居中
+- line-height: `line-height=height`，适用于纯文字垂直居中；
+- flex布局：`align-items: center`;
+- 绝对定位+transform: `position: absolute;top:50%;transform:translateY(-50%)`;
+- table布局
+## 隐藏页面中某个元素：
+- `opacity: 0`: 利用透明度，但不会改变布局，而且元素绑定的事件还会生效
+- `visibility: hidden`: 不会改变布局，不会触发该元素绑定的事件，但是所占空间仍然保留，不会触发重排，但会重绘
+- `display: none`: 隐藏元素，会改变当前布局，文档流中不再保留当前元素所占的空间，触发重排和重绘
+## 利用CSS实现三角符号
+元素宽度高度均为0，三面边框皆透明
+```
+div:after {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-top: 20px solid red;
+  border-bottom: 20px solid transparent;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+}
+```
+## flex布局
+弹性布局  
+**容器属性**
+- `flex-direction`: 主轴方向(也就是item的排列方向)row|row-reverse|column|column-reverse
+- `flex-wrap`: 项目的换行规则wrap|nowrap|wrap-reverse
+- `align-items`: 垂直轴对齐方式
+- `justify-content`: 水平轴对齐方式
+**项目属性**
+- `order`: 项目的排列顺序，顺序越小，位置越靠前，默认为0
+- `flex-grow`: 项目的放大比例，默认为0，即如果有剩余空间，也不会放大
+- `flex-shrink`: 项目的缩小比例，默认为1，当空间不足时，会等比例缩小；设置为0，空间不足也不会缩小
+- `flex-basis`: 分配多余空间，项目占据的主轴空间
+- `flex`: none | [ <'flex-grow'> <'flex-shrink'>? || <'flex-basis'> ], 默认为0 1 auto
+- `align-self`: 允许单个项目与其他项目不一样的对齐方式，可以覆盖
+## 清除浮动
+- 添加额外标签，并设置`clear: both`;
+- 父级增加overflow属性，或者设置高度
+- 建立伪类选择器清除浮动
+```
+//在css中添加:after伪元素
+.parent:after{
+    /* 设置添加子元素的内容是空 */
+    content: '';
+    /* 设置添加子元素为块级元素 */
+    display: block;
+    /* 设置添加的子元素的高度0 */
+    height: 0;
+    /* 设置添加子元素看不见 */
+    visibility: hidden;
+    /* 设置clear：both */
+    clear: both;
+}
+```
+# node
+## koa
+- 创建http server
+- 构造request、response、context对象
+- 中间件处理
+- 请求路由
+- body解析
+- 错误处理
+```
+const app = new Koa();
+app.use(async (ctx, next) => {
+  console.log('fn1 start');
+  await next();
+  console.log('fn1 end');
+})
+app.use(async (ctx, next) => {
+  console.log('fn2 start');
+  await next();
+  console.log('fn2 end');
+})
+app.use(async (ctx, next) => {
+  console.log('fn3 start');
+  await next();
+  console.log('fn3 end');
+})
+
+fn1(ctx, next) {
+  console.log('fn1 start');
+  async fn2(ctx, next) {
+    console.log('fn2 start');
+    async fn3(ctx, next) {
+      console.log('fn3 start');
+      await Promise.resolve();
+      console.log('fn3 end');
+    }
+    console.log('fn2 end');
+  }
+  console.log('fn3 end');
+}
+```
+## koa和express的区别
+- express集成了router、bodyparser等中间件；koa轻量化设计，需要引入插件
+- 中间件机制
+  - koa基于洋葱模型
+  - express中间件线性执行
+- express利用回调来支持异步；koa利用generator、async/await以同步方式实现异步
+- 执行结果
+  - express：直接操作res对象，直接ctx.send就响应了；虽然剩余中间件还会继续执行，但是不能影响最终的响应结果；所以express通常在最后一个中间件设置响应结果
+  - koa：以ctx.body进行设置，但是**并不会立即响应**，等到所有中间件执行完之后才会响应
