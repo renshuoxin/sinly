@@ -5,9 +5,7 @@ var depth2 = (node) => {
     stack.push(node);
     while (stack.length) {
       //每次取最后一个
-      console.log('stack:', JSON.stringify(stack));
       let item = stack.pop();
-      console.log('item: ', item);
       let children = item.children || [];
       nodes.push(item);
       //判断children的长度
@@ -17,6 +15,19 @@ var depth2 = (node) => {
     }
   }
   return nodes;
+};
+
+/**
+ * 深度遍历-递归
+ * @param {*} root 
+ */
+const dfsTraversal = (root) => {
+  let result = [];
+  result.push(root);
+  for (let i = 0; i < root?.children?.length; i++) {
+    result = result.concat(dfsTraversal(root.children[i]));
+  }
+  return result;
 };
 
 let obj = {
@@ -56,4 +67,5 @@ let obj = {
   ],
 };
 
-depth2(obj);
+console.log('非递归：', depth2(obj));
+console.log('递归：', dfsTraversal(obj));

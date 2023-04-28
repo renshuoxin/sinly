@@ -519,6 +519,15 @@ notify(event, value) {
   {{ slotProps.text }} {{ slotProps.count }}
 </MyComponent>
 ```
+## nextTick
+https://juejin.cn/post/7089980191329484830  
+![avatar](https://p9-juejin.byteimg.com/tos-cn-i-k3u1fbpfcp/b5c6403a0259491fbe1d21fba66b4055~tplv-k3u1fbpfcp-zoom-in-crop-mark:4536:0:0:0.awebp?)  
+**作用**：延迟执行  
+- DOM异步批量更新
+  1. 当数据发生变化时，Vue开启一个队列(queueWatcher)缓存同一事件循环中的数据更新watcher
+  2. 对于同一数据的更新只会缓存一次
+  3. 当执行栈清空或者下次事件循环时，取出queueWatcher中回调执行实际操作，更新DOM
+- 保证能够获取到更新后的DOM
 ## vue-router
 为vue应用提供路由管理器，描述URL和UI的映射关系，即URL变化引起UI更新（无需刷新页面）
 ### 核心点
@@ -760,6 +769,62 @@ function factorial(n) {
   return result;
 }
 ```
+## setTimeout、promise、async/await的区别
+- setTimeout是异步执行函数，当js执行到此函数时，会将其放到异步队列中；等到下一个事件循环(或某个事件循环)执行其回调函数
+- promise本身是立即执行函数，但.then和.catch是异步函数，js将其放到微任务队列中；当执行栈执行完之后，执行微任务队列中回调
+- async/await将异步变同步，await之前是同步执行的，当遇到await后js会阻塞之后的代码执行(async函数返回promise，await之后的代码相当于promise.then()中的回调)
+## mouseenter和mouseover，mouseout和mouseleave
+- mouseenter和mouseleave事件不支持冒泡；mouseover和mouseout事件支持冒泡
+- mouseout 和 mouseover比 mouseleave 和 mouseenter先触发
+## js加载时间线
+1. 创建Document对象，开始解析web页面。这个阶段document.readyState="loading";
+2. 当遇到link外部css，创建线程加载外部css，并继续解析文档
+3. 当遇到外部js，没有设置defer、aysnc，阻塞文档解析，等待js加载完成并执行后，继续解析文档
+4. 当遇到外部js，设置了defer、async，浏览器异步加载js，并继续解析文档；async属性的js加载完成后，立即执行
+5. 遇到img等，先正常解析dom结构，然后浏览器异步加载src，并继续解析文档
+6. 当文档解析完成，此时document.readyState="interactive"
+7. 等待defer属性js加载完成后，依次执行；执行完之后触发DOMContentLoaded
+8. 当所有async属性js、图片等资源加载并执行完之后，此时document.readyState="complete"，触发load事件
+## base64
+### 什么是base64
+base64是一种编码方式，其包括64个基本字符集(a-z,A-Z,0-9,+,/)；也就是说将数据转换为这个字符集中的字符
+### 编码过程
+- 将每三个字节为一组，一共24个二进制位
+- 将其分为四组，每组6个二进制位
+- 在每组前面加入00，扩展成32个二进制位，也就是4个字节
+- 根据base64字符对照得到每个字节对应的符号
+### base64编码后为什么体积膨胀
+3个字节编码后变为4个字节，因此体积会大三分之一
+## 事件代理/委托
+### 什么是事件代理
+将一个元素的响应事件(如click、keydown)处理函数委托到另一个元素上。也就是说，会把一个元素或者一组元素的事件委托到它的父级元素或者更外层元素，真正绑定事件的是外层元素，而不是目标元素。  
+**委托时机：事件冒泡阶段**
+### 应用场景
+```
+// 获取目标元素
+const lis = document.getElementsByTagName("li")
+// 循环遍历绑定事件
+for (let i = 0; i < lis.length; i++) {
+    lis[i].onclick = function(e){
+        console.log(e.target.innerHTML);
+    }
+}
+```
+以上方式可看出在每个`li`元素上绑定了click事件，1）内存消耗极大；2）对于动态增加和删除的元素需要重复处理(动态添加/删除事件绑定)。此时便可以采用事件委托：
+```
+// 给父层元素绑定事件
+document.getElementById('list').addEventListener('click', function (e) {
+    // 兼容性处理
+    var event = e || window.event;
+    var target = event.target || event.srcElement;
+    // 判断是否匹配目标元素
+    if (target.nodeName.toLocaleLowerCase === 'li') {
+        console.log('the content is: ', target.innerHTML);
+    }
+});
+```
+### 总结
+适合事件委托的事件：`click，mousedown，mouseup，keydown，keyup，keypress`。
 # 其他
 ## jsBridge
 ### JS调用Native实现方式
@@ -979,8 +1044,75 @@ Expires是HTTP 1.0的字段，表示缓存到期时间，是一个绝对时间�
 - cookie数据大小不能超过4K；sessionStorage和localStorage可以达到5M+;
 - cookie在设置的过期时间内一直有效；localStorage永久存储，浏览器关闭后仍然有效除非用户手动清除；sessionStorage在当前会话中有效，浏览器当前窗口关闭后自动删除
 - cookie的数据会自动传到服务器；sessionStorage和localStorage数据存储在本地浏览器
+
+## CDN
+### CDN的概念
+CDN(content delivery network, 内容分发网络)是指一种通过互联网连接的电脑网络系统，利用最靠近每位用户的服务器，更快、更可靠地将资源发送给用户，来提供高性能、可扩展性及低成本的网络内容给用户。  
+  
+CDN系统主要包含三部分：
+- 分发服务系统：最基本的工作单元是cache设备，cache负责直接响应最终用户的访问请求，把缓存在本地的内容快速提供给用户。同时cache还负责与源站点进行内容同步，把更新的内容以及本地没有的内容从源站点获取并保存在本地。cache设备的数量、规模、总服务能力是衡量一个CDN系统服务能力的最基本的指标
+- 负载均衡系统：主要负责对所有发起服务请求的用户进行访问调度，确定提供给用户的最终实际访问地址。两级调度体系分为全局负载均衡(GSLB)和本地负载均衡（SLB），全局负载均衡负责根据用户就近性原则，通过对每个服务节点进行最优判断，确定向用户提供服务的cache的物理位置；本地负载均衡负责节点内部的设备负载均衡
+- 运营管理系统：分为运营管理和网络管理子系统。
+### CDN作用
+CDN一般用来托管Web资源，可供下载的资源，应用程序。
+- 用户收到的内容来自最近的数据中心，延迟更低，内容加载更快；
+- 部分资源请求分配给CDN，降低了服务器的负载
+### CDN工作原理
+1. URL经DNS解析后，发现该URL对应的是一个CDN专用的DNS服务器，DNS系统将该域名解析交给CNAME指向的CDN专用的DNS服务器
+2. CDN专用DNS服务器将CDN的全局负载均衡设备IP地址返回给用户
+3. 用户向CDN全局负载均衡设备发起数据请求
+4. 全局负载均衡设备根据用户的IP地址以及用户请求的URL，选择一台用户所属的区域负载均衡设备，告诉用户向这台设备发起请求
+5. 区域负载均衡设备选择一台合适的缓存服务器来提供服务，将该缓存服务器的IP地址返回给全局负载均衡设备
+6. 全局负载均衡设备将IP地址返回给用户
+7. 用户想缓存服务器发起请求，缓存服务器响应请求，将内容发送至用户终端
+
+## 性能优化
+### 资源大小
+- 资源压缩
+  - 打包资源js、css压缩
+  - 图片做适当的压缩或者使用支持图片参数的图片服务
+  - 静态服务器开启gzip
+- 资源引入
+  - 比较大的外部依赖换成同功能体积小的库或者按需引入
+  - 避免整体引入依赖模块，进行tree-shaking
+- 合理进行模块拆分(尽量首屏只加载必要资源，可通过资源加载覆盖率进行分析)
+### 资源速度
+- 部署资源到CDN
+- 使用dns-prefetch提前获取IP地址: 当浏览器从第三方服务器获取资源时，必须先将域名解析为IP地址，通过dns-prefetch可以减少dns解析延迟
+- 使用http2进行并行请求
+- 缓存资源：如浏览器缓存(强缓存、协商缓存等)、pwa缓存
+### 提前加载
+- SSR
+- 使用APP离线包
+- prefetch: 利用浏览器的空闲时间加载**用户接下来可能访问的资源**，缓存在本地；但是不解析执行，等到用户访问时才会解析
+  - prefetch会优化将来访问页面资源的首次加载速度
+  - 使用prefetch时选择优先级较高的资源(如js、css、字体资源)
+  - prefetch可能造成额外的带宽消耗
+- preload: 在当前页面开始加载之前在浏览器后台提前下载资源，**缓存当前页面会立刻访问到的资源**，不会花费额外带宽
+### 懒加载
+懒加载也称为延迟加载、按需加载
+- 图片懒加载：指的是在长网页中延迟加载图片数据，首先保证可视窗口中图片的加载；当滚动时，再加载之后的图片  
+  图片加载是由`src`引起的，`src`被赋值后，浏览器就会发起图片资源请求。因此可以将图片的真实地址赋值给`data-xxx`属性，当图片需要加载时将`data-xxx`的图片路径赋值给`src`，这样就实现了图片的按需加载。
+- 组件懒加载：可利用Vue的defineAsyncComponent动态加载
 # 网络
 https://www.eet-china.com/mp/a68780.html  
+
+## https2
+### 基本概念
+- 帧(frame)：数据传输的最小单位，主要包括length、type、flags、stream identifier、frame playload这些字段
+- 流(stream)：流可以承载双向字节流，每个流都有一个整数ID
+### 特征
+- 二进制分帧  
+  http2不再依赖TCP连接进行多流并行，二进制帧可以乱序发送，然后通过帧中流标识进行拼装。  
+- 多路复用  
+  建立一个TCP连接，并行发送多个请求。在所有请求中，基于数据流和二进制帧，不存在同域并行阻塞的问题  
+- 头部压缩  
+  1.X版本中，首部用文本格式传输，会给每个传输增加额外的开销；另外网页中每个请求携带的一些头部字段是相同的。因此HTTP2采用HPACK进行头部压缩，在客户端和服务器端维护字典  
+  - 静态字典，常见的头部字段(包含索引)
+  - 动态字典，可以动态添加的内容（包含索引）
+  - 在头部传输时，只需要传输对应的头部字段索引，然后服务端根据字典进行映射取值
+- 服务器推送  
+  服务器端推送使得服务器可以预测客户端需要的资源，主动推送到客户端
 ## HTTP和HTTPS
 ### http和https基本概念
 1、**http**: http是客户端和服务器端请求和应答的标准，用于从WWW服务器传输超文本到本地浏览器的超文本传输协议；
@@ -1258,3 +1390,11 @@ fn1(ctx, next) {
 - 执行结果
   - express：直接操作res对象，直接ctx.send就响应了；虽然剩余中间件还会继续执行，但是不能影响最终的响应结果；所以express通常在最后一个中间件设置响应结果
   - koa：以ctx.body进行设置，但是**并不会立即响应**，等到所有中间件执行完之后才会响应
+# 微信公众号相关
+## oauth2.0授权
+https://juejin.cn/post/7066716559808397343  
+**主要角色**  
+1. 客户端，某网站如一点号
+2. 资源所有者，如用户
+3. 资源服务器，如一点号服务端
+4. 授权服务器，如微信开放平台

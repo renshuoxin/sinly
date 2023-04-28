@@ -42,7 +42,7 @@ function bfsTraversal(root) {
     let node = nodeList.shift();
     nodes.push(node);
     for(let i = 0; i < node.children.length; i++) {
-      nodeList.push(node.children);
+      nodeList.push(node.children[i]);
     }
   }
   return nodes;
