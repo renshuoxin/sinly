@@ -1,3 +1,6 @@
+/**
+ * 二分查找
+ */
 function binarySearch(arr, target) {
   const len = arr.length;
 

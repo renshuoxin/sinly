@@ -43,3 +43,27 @@ class Application {
     };
   }
 }
+
+function compose(middlewares) {
+
+  return (ctx, next) => {
+    const dispatch = (i) => {
+      let fn = middlewares[i];
+      if (i === this.middlewares.length) {
+        fn = next;
+      }
+      
+      if (!fn) {
+        return Promise.resolve();
+      }
+
+      try {
+        return Promise.resolve(fn(ctx, dispatch.bind(null, i + 1))); 
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    }
+  
+    return dispatch(0);
+  }
+}

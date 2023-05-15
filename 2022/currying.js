@@ -43,3 +43,19 @@ function curring(func) {
 
 const sum = curring(add);
 console.log(sum(1)(2)());
+
+function curry(fn, args) {
+  const length = fn.length;
+  args = args || [];
+  const result = function() {
+    const newArgs = args.concat(Array.prototype.slice.call(arguments));
+    if (newArgs.length < length) {
+      return curry(fn, newArgs);
+    } else {
+      return result.apply(this, newArgs);
+    }
+  }
+
+  return result;
+}
+
