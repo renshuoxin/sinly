@@ -46,13 +46,14 @@ console.log(sum(1)(2)());
 
 function curry(fn, args) {
   const length = fn.length;
+  console.log('length: ', length);
   args = args || [];
   const result = function() {
     const newArgs = args.concat(Array.prototype.slice.call(arguments));
     if (newArgs.length < length) {
       return curry(fn, newArgs);
     } else {
-      return result.apply(this, newArgs);
+      return fn.apply(this, newArgs);
     }
   }
 

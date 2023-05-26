@@ -38,3 +38,21 @@ const random = () => {
 }
 
 setInterval(debounce(fun, 1000), random);
+
+function debounce1(fn, delay, immediate) {
+  let timer = null;
+  return (args) => {
+    let context = this;
+    timer && clearTimeout(timer);
+    if (immediate) {
+      !timer &&  fn.apply(context, args);
+      timer = setTimeout(() => {
+        timer = null;
+      }, delay);
+    } else {
+      timer = setTimeout(() => {
+        fn.apply(context, args);
+      }, delay);
+    }
+  }
+}

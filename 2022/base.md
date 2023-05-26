@@ -528,6 +528,57 @@ https://juejin.cn/post/7089980191329484830
   2. 对于同一数据的更新只会缓存一次
   3. 当执行栈清空或者下次事件循环时，取出queueWatcher中回调执行实际操作，更新DOM
 - 保证能够获取到更新后的DOM
+## computed实现原理：响应式 && 缓存
+https://zhuanlan.zhihu.com/p/357250216  
+- computed是响应式
+- computed具备缓存功能
+- 依赖的data改变了，computed如何更新
+case: 页面A引用computed B, computed B依赖data C  
+1. data数据C改变 -> 通知computed B watcher更新，只会重置脏数据标志位dirty=true，不会计算值  
+2. 通知页面watcher进行渲染更新，读取computed B, 然后computed B进行重新计算
+## keep-alive
+keep-alive是Vue的内置组件，可以将组件缓存在内存中，不需要重复创建组件
+### 生命周期
+- 首次渲染
+beforeRouterEnter -> beforeCreate -> created -> beforeMount -> mounted -> activated -> …… -> beforeRouterLeave -> deactivated
+- 激活
+beforeRouterEnter -> activated -> …… -> beforeRouterLeave -> deactivated
+### 原理实现
+- 实现算法LRU(最近最少使用)
+```
+export default {
+  created() {
+    <!-- 创建缓存对象 -->
+    this.cache = Object.create(null);
+    this.keys = [];
+  }
+
+  mounted() {
+    <!-- 监听include和exclude属性，根据规则变化进行缓存列表更新，将不需要的组件从缓存中删除 -->
+    this.$watch('include', (val) => {
+      pruneCache(this, name => matches(val, name));
+    })
+
+    this.$watch('exclue', (val) => {
+      pruneCache(this, name => matches(val, name));
+    })
+  }
+
+  destroyed() {
+    <!-- 组件销毁时，将组件进行销毁 -->
+    for (let key in this.cache) {
+      pruneCacheEntry(this.cache, key, this.keys);
+    }
+  }
+
+  render() {
+    <!-- 在组件渲染时，会自动执行render函数，利用LRU算法对组件进行缓存 -->
+    // 1、缓存的是VNode
+    // 2、如果当前组件在缓存中，直接获取缓存 并更新其位置(将其放到队列的尾部)
+    // 3、如果当前组件不在缓存中，对其进行缓存，若超出缓存列表长度，删除缓存中第一个
+  }
+}
+```
 ## vue-router
 为vue应用提供路由管理器，描述URL和UI的映射关系，即URL变化引起UI更新（无需刷新页面）
 ### 核心点
@@ -1107,6 +1158,144 @@ CDN一般用来托管Web资源，可供下载的资源，应用程序。
 - 图片懒加载：指的是在长网页中延迟加载图片数据，首先保证可视窗口中图片的加载；当滚动时，再加载之后的图片  
   图片加载是由`src`引起的，`src`被赋值后，浏览器就会发起图片资源请求。因此可以将图片的真实地址赋值给`data-xxx`属性，当图片需要加载时将`data-xxx`的图片路径赋值给`src`，这样就实现了图片的按需加载。
 - 组件懒加载：可利用Vue的defineAsyncComponent动态加载
+## CSRF(Cross Site Request Forgery，跨站点请求伪造)
+恶意站点或者程序通过已认证用户的浏览器在受信任站点上执行非正常操作。可进行的恶意操作局限于已在网站通过身份验证的用户功能。
+### 需要满足以下条件
+- 用户在被攻击网站已经登录认证
+- 用户在未登出的情况下，访问了第三方网站，触发了对被攻击系统的请求
+### 防护策略
+- 利用cookie的SameSite属性
+攻击者利用用户的登录态发起CSRF攻击，而cookie正是浏览器和服务器之间维护登录状态的一个关键数据。因此，首先要考虑cookie问题。  
+通常CSRF攻击都是从第三方站点发起的，冒用用户在被攻击站点的登录凭证，因此：
+  - 如果是从第三方网站发起的请求，浏览器禁止发送某些关键cookie信息到服务器
+  - 如果是从同一站点发起的请求，正常发送cookie到服务器  
+SameSite属性正好可以解决这个问题：
+  - Strict: 浏览器完全禁止第三方拿到cookie
+  - Lax: 在跨站点的情况下，从第三方站点的链接打开或Get方式的表单提交可以携带cookie；除此之外，如post请求、img、iframe等加载的URL都不会携带cookie
+  - None: 任何情况下都会发送cookie
+- 利用同源策略
+禁止外域向本站点发送请求  
+  
+在HTTP协议中，每个异步请求都携带了两个header，用户标记来源域名：
+  - Referer: 记录该请求的来源地址(含URL路径)
+  - Origin: 记录该请求的域名信息(不含URL路径)
+服务器先判断Origin，再根据实际情况判断referer
+- 利用token验证
+在用户登录成功后，服务器生成一个token返回给用户；在浏览器端想服务器发送请求时，带上token，服务器验证token
+## 跨域
+跨域是浏览器基于**同源策略**的一种安全手段。同源需要满足以下三个条件：协议相同 + 域名相同 + 端口相同。  
+同源策略主要是处于安全考虑，防止浏览器收到跨站攻击
+### 解决方案
+- JSONP
+JSONP主要利用script标签没有跨域限制，实现跨域Get请求
+```
+function jsonp(options) {
+  const { url, params, timeout } = options;
+  const callbackId = `jsonp_${Date.now()}_${Math.ceil(Math.random() * 1000000)}`;
+
+  const searchParams = Object.keys(params).map((key) => `${key}=${params[key]}`);
+  const newUrl = `${url}?${searchParams.join('&')}&callback=${callbackId}`;
+
+  const pro = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.setAttribute('src', newUrl);
+
+    window[callbackId] = (data) => {
+      resolve(data);
+    }
+
+    script.addEventListener('error', () => {
+      reject(new Error(`JSONP request to ${newUrl} failed`));
+      document.body.removeChild(script);
+    });
+
+    document.body.appendChild(script);
+  });
+
+  const timeoutPro = new Promise((resolve, reject) => {
+    setTimeout(() => {
+      reject('timeout');
+    }, timeout);
+  })
+
+
+  return Promise.race([timeoutPro, pro]);
+}
+```
+- CORS(Cross-Origin Resource Sharing, 跨站资源共享)
+由一系列HTTP请求头组成，这些请求头决定浏览器是否阻止前端Javascript代码获取跨域请求的响应
+- 代理
+  - 本地开发，可以利用打包工具提供的代理插件
+  - 服务端实现代理请求转发，如node层
+  - 配置nginx实现代理
+### CORS(Cross-Origin Resource Sharing, 跨站资源共享)
+CORS需要浏览器和服务器同时支持，目前主流浏览器均已支持，且都由浏览器自动完成，无需用户和开发者介入。  
+因此实现CORS关键是服务器，只要服务器实现了CORS接口，就可以跨源通信。
+#### 两种请求
+CORS请求分为两类：简单请求和非简单请求
+- 简单请求
+简单请求中，浏览器会在请求头信息中增加`Origin`字段，表明当前请求来源，如：  
+```
+GET /cors HTTP/1.1
+Origin: http://api.bob.com
+Host: api.alice.com
+Accept-Language: en-US
+Connection: keep-alive
+User-Agent: Mozilla/5.0...
+```  
+服务器会根据Origin字段判断是否同意此次请求。  
+1、如果Origin**不在允许范围内**，服务器会返回一个正常的HTTP相应，但是响应头信息中不包含`Access-Control-Allow-Origin`字段，浏览器通过响应头判断出错了，就会抛出错误，被XMLHttpRequest的onerror捕获。  
+2、如果Origin**在允许范围内**，服务器返回响应，并且增加对应的响应头信息  
+```
+Access-Control-Allow-Origin: https://api.bob.com
+Access-Control-Allow-Credentials: True
+Access-Control-Expose-Headers: FooBar
+```
+  - Access-Control-Allow-Origin
+  值为请求时的Origin，或者`*`表示可以接收任意域名的请求
+  - Access-Control-Allow-Credentials
+  可选，是否允许发送cookie。默认情况下，cookie不包含在CORS请求中
+  - Access-Control-Expose-Headers
+  可选，CORS请求时，XMLHttpRequest对象只能获取到头信息中6个字段，如果想获取到其他字段，需要通过`Access-Control-Expose-Headers`进行指定
+- 非简单请求
+非简单请求指的是对服务器有特殊要求的请求，比如请求方法是`put`或者`delete`，或者`Content-type`字段类型为`application/json`。  
+非简单请求在正式请求之前会增加一个查询请求，称为“预检”请求(preflight).  
+浏览器会先询问服务器，当前网页所在的域名是否在服务器的许可名单中，以及可以使用哪些头信息字段。只有得到肯定答复后，浏览器才会发出正式请求。
+  
+1、浏览器发现是一个非简单请求，会自动发出“预检”请求，要求服务器进行确认。下面是预检请求的HTTP头信息：
+```
+OPTIONS /cors HTTP/1.1
+Origin: http://api.bob.com
+Access-Control-Request-Method: PUT
+Access-Control-Request-Headers: X-Custom-Header
+Host: api.alice.com
+Accept-Language: en-US
+Connection: keep-alive
+User-Agent: Mozilla/5.0...
+```  
+  - 预检请求请求方法是`options`
+  - 关键字段`Origin`
+  - Access-Control-Request-Method: 必须，列出CORS请求会用到哪些HTTP方法
+  - Access-Control-Request-Headers: CORS请求会额外发送的头信息字段
+2、预检请求响应  
+```
+HTTP/1.1 200 OK
+Date: Mon, 01 Dec 2008 01:15:39 GMT
+Server: Apache/2.0.61 (Unix)
+Access-Control-Allow-Origin: http://api.bob.com
+Access-Control-Allow-Methods: GET, POST, PUT
+Access-Control-Allow-Headers: X-Custom-Header
+Content-Type: text/html; charset=utf-8
+Content-Encoding: gzip
+Content-Length: 0
+Keep-Alive: timeout=2, max=100
+Connection: Keep-Alive
+Content-Type: text/plain
+```
+  - Access-Control-Allow-Origin: 必须，允许的跨域请求域名
+  - Access-Control-Allow-Methods: 必须，表示服务器支持的跨域请求方法
+  - Access-Control-Allow-Headers: 和请求头对应，表示服务器支持的所有头信息字段
+  - Access-Control-Max-Age: 可选，表示本次预检请求的有效期，在有效期内不会再发出预检请求
 # 网络
 https://www.eet-china.com/mp/a68780.html  
 
@@ -1361,6 +1550,19 @@ div:after {
 - hover：鼠标悬停时的样式属性
 - active：被用户激活(鼠标点击与释放之前的事件)时的样式属性
 **正确顺序：a:link、a:visited、a:hover、a:active**
+## @media
+@media媒体查询，可以根据不同的媒体类型定义不同的样式
+### 媒体类型
+- all：适用于所有设备
+- print：适用于打印预览模式下在屏幕查看的分页材料和文档
+- screen：用户屏幕
+### 媒体特性
+用户描述输出设备或环境的具体特征
+- width: 输出设备中的页面可见区域宽度
+- height：输出设备中的页面可见区域高度
+- max-width: 输出设备中的页面最大可见区域宽度
+- max-height: 输出设备中的页面最大可见区域高度
+- aspect-ratio: 输出设备中的页面可见区域宽度与高度的比例
 # node
 ## koa
 - 创建http server
