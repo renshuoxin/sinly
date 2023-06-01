@@ -1296,6 +1296,22 @@ Content-Type: text/plain
   - Access-Control-Allow-Methods: 必须，表示服务器支持的跨域请求方法
   - Access-Control-Allow-Headers: 和请求头对应，表示服务器支持的所有头信息字段
   - Access-Control-Max-Age: 可选，表示本次预检请求的有效期，在有效期内不会再发出预检请求
+## axios
+### axios特性
+- 在浏览器端通过XMLHttpRequest创建请求
+- 在node环境中通过http模块创建请求
+- 支持Promise API
+- 拦截请求和响应
+- 转换请求数据和响应数据
+- 取消请求
+- 自动转换json数据
+### axios封装
+- 设置接口请求URL
+- 设置请求头、超时时间等，如请求头content-type
+- 封装请求方法：get、post、jsonp
+- 封装请求拦截器：对请求数据进行统一处理，如增加统一token等
+- 封装响应拦截器：对响应数据进行统一处理，如状态码、错误码、错误上报等
+
 # 网络
 https://www.eet-china.com/mp/a68780.html  
 

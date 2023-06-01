@@ -5,7 +5,7 @@
  */
 
 function longIncreaseSubsequence(arr) {
-  const result = new Array(arr.length).fill(1);
+  const result = new Array(arr.length + 1).fill(1);
 
   for (let i = 1; i < arr.length; i++) {
     for (let j = 0; j < i; j++) {
